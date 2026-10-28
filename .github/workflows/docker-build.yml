@@ -1,0 +1,137 @@
+name: Build and Publish PHP Apache
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - README.md
+  schedule:
+     - cron: "43 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: php-apache-build
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: mrasmith/php-apache-custom
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          pull: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Get image version information
+        id: version
+        shell: bash
+        run: |
+          docker pull "${REGISTRY}/${IMAGE_NAME}:latest"
+
+          PHP_VERSION=$(docker run --rm \
+            "${REGISTRY}/${IMAGE_NAME}:latest" \
+            php -r 'echo PHP_VERSION;')
+
+          NODE_VERSION=$(docker run --rm \
+            "${REGISTRY}/${IMAGE_NAME}:latest" \
+            node --version)
+
+          COMPOSER_VERSION=$(docker run --rm \
+            "${REGISTRY}/${IMAGE_NAME}:latest" \
+            composer --version --no-ansi | head -n 1)
+
+          BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
+
+          echo "php_version=${PHP_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "node_version=${NODE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "composer_version=${COMPOSER_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
+
+      - name: Update README
+        env:
+          PHP_VERSION: ${{ steps.version.outputs.php_version }}
+          NODE_VERSION: ${{ steps.version.outputs.node_version }}
+          COMPOSER_VERSION: ${{ steps.version.outputs.composer_version }}
+          BUILD_DATE: ${{ steps.version.outputs.build_date }}
+        run: |
+          python3 <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path("README.md")
+          content = path.read_text()
+
+          replacements = {
+              "PHP_VERSION": os.environ["PHP_VERSION"],
+              "NODE_VERSION": os.environ["NODE_VERSION"],
+              "COMPOSER_VERSION": os.environ["COMPOSER_VERSION"],
+              "BUILD_DATE": os.environ["BUILD_DATE"],
+          }
+
+          for marker, value in replacements.items():
+              pattern = (
+                  rf"<!-- {marker} -->.*?<!-- /{marker} -->"
+              )
+              replacement = (
+                  f"<!-- {marker} -->{value}<!-- /{marker} -->"
+              )
+
+              content, count = re.subn(
+                  pattern,
+                  lambda _: replacement,
+                  content,
+                  count=1,
+                  flags=re.DOTALL,
+              )
+
+              if count != 1:
+                  raise RuntimeError(
+                      f"Expected exactly one marker pair for {marker}"
+                  )
+
+          path.write_text(content)
+          PY
+
+      - name: Commit README changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add README.md
+
+          if git diff --cached --quiet; then
+            echo "README is already up to date."
+          else
+            git commit -m "Update PHP Apache image information"
+            git push
+          fi
