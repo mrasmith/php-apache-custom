@@ -7,28 +7,36 @@ LABEL org.opencontainers.image.description="PHP 8.3 Apache with MySQL, GD, Imagi
 LABEL org.opencontainers.image.source="https://github.com/mrasmith/php-apache-custom"
 
 # System utilities, image libraries and PHP build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends 
-    $PHPIZE_DEPS 
-    ca-certificates 
-    curl 
-    gnupg 
-    wget 
-    git 
-    unzip 
-    zip 
-    brotli 
-    libbrotli-dev 
-    libfreetype-dev 
-    libjpeg62-turbo-dev 
-    libpng-dev 
-    libzip-dev 
-    libmagickwand-dev 
-    libexif-dev 
-    ffmpeg 
-    poppler-utils 
-    tesseract-ocr 
-    pandoc 
-    imagemagick 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    autoconf \
+    dpkg-dev \
+    file \
+    g++ \
+    gcc \
+    libc-dev \
+    make \
+    pkg-config \
+    re2c \
+    ca-certificates \
+    curl \
+    gnupg \
+    wget \
+    git \
+    unzip \
+    zip \
+    brotli \
+    libbrotli-dev \
+    libfreetype-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    libzip-dev \
+    libmagickwand-dev \
+    libexif-dev \
+    ffmpeg \
+    poppler-utils \
+    tesseract-ocr \
+    pandoc \
+    imagemagick \
     && rm -rf /var/lib/apt/lists/*
 
 # PHP extensions
