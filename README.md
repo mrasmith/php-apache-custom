@@ -16,10 +16,10 @@ docker pull ghcr.io/mrasmith/php-apache-custom:latest
 
 | Component | Installed version |
 |---|---|
-| PHP | <!-- PHP_VERSION -->Pending first build<!-- /PHP_VERSION --> |
-| Node.js | <!-- NODE_VERSION -->Pending first build<!-- /NODE_VERSION --> |
-| Composer | <!-- COMPOSER_VERSION -->Pending first build<!-- /COMPOSER_VERSION --> |
-| Last successful image build | <!-- BUILD_DATE -->Pending first build<!-- /BUILD_DATE --> |
+| PHP | <!-- PHP_VERSION -->8.3.36<!-- /PHP_VERSION --> |
+| Node.js | <!-- NODE_VERSION -->v24.22.2<!-- /NODE_VERSION --> |
+| Composer | <!-- COMPOSER_VERSION -->Composer version 2.10.3 2026-08-27 13:34:23<!-- /COMPOSER_VERSION --> |
+| Last successful image build | <!-- BUILD_DATE -->2026-10-28 21:20 UTC<!-- /BUILD_DATE --> |
 
 These details are updated automatically after each successful build.
 
